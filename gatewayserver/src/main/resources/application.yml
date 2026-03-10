@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: "gatewayserver"
+  config:
+    import: "optional:configserver:http://localhost:8071/"
+  cloud:
+    gateway:
+      server:
+        webflux:
+          discovery:
+            locator:
+              lowerCaseServiceId: true
+              enabled: false # This configuration enables the service discovery feature of Spring Cloud Gateway, allowing it to automatically discover and route requests to other services registered with the service registry (e.g., Eureka). This can simplify the configuration of routes and make it easier to manage the routing of requests in a microservices architecture.
+management:
+  info:
+    env:
+      enabled: true # This configuration enables the inclusion of environment information in the application's info endpoint. This can be useful for debugging and monitoring purposes, as it allows you to see the active profiles, property sources, and other environment details when accessing the /actuator/info endpoint.
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    gateway:
+      access: unrestricted # This configuration allows unrestricted access to the gateway endpoint, which provides information about the routes and filters configured in the API gateway. This can be useful for monitoring and debugging purposes, but in a production environment, you should consider restricting access to this endpoint for security reasons.
+# The "info" section is used to provide metadata about the application, such as its name, description, and version. This information can be useful for monitoring and management purposes, as it allows you to easily identify the service and its version when viewing the application's health and status in a monitoring tool or dashboard.
+info:
+  app:
+    name: "gatewayserver"
+    description: "This service serves as the API gateway for the financial services application, routing requests to the appropriate microservices and providing a single entry point for clients."
+    version: "1.0.0"
+
