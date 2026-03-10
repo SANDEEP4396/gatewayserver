@@ -1,4 +1,4 @@
-package com.microservices.gatewayserver;
+package com.configuration.gatewayserver;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
