@@ -1,36 +1,151 @@
 services:
-  network-deploy-service:
-    networks:
-      - financial-services
-  microservice-base-config:
-    extends:
-      service: network-deploy-service
-    deploy:
-      resources:
-        limits:
-          memory: 700m
-    environment:
-      SPRING_PROFILES_ACTIVE: default
-      SPRING_RABBITMQ_HOST: rabbit # Required because the microservices need to connect to the RabbitMQ server using the hostname "rabbit" as defined in the docker-compose.yml file. This allows the microservices to communicate with the RabbitMQ server for messaging and event-driven communication.
-      # SPRING_RABBITMQ_PORT: 5672 # This is not required because the default port for RabbitMQ is already 5672, so it will be used automatically if not specified.
-  microservice-configserver-config:
-    extends:
-      service: microservice-base-config
-    environment:
-      SPRING_PROFILES_ACTIVE: default
-      SPRING_CONFIG_IMPORT: "configserver:http://configserver:8071/"
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root
+  #  accountsDB:
+  #    container_name: accountsDB
+  #    environment:
+  #      MYSQL_DATABASE: accountsDB
+  #    ports:
+  #      - "3306:3306"
+  #    extends:
+  #      file: common-config.yml
+  #      service: microservice-db-config
+  #
+  #  loansDB:
+  #    container_name: loansDB
+  #    environment:
+  #      MYSQL_ROOT_PASSWORD: root
+  #      MYSQL_DATABASE: loansDB
+  #    ports:
+  #      - "3307:3306"
+  #    extends:
+  #      file: common-config.yml
+  #      service: microservice-db-config
+  #
+  #  cardsDB:
+  #    container_name: cardsDB
+  #    environment:
+  #      MYSQL_DATABASE: cardsDB
+  #    ports:
+  #      - "3308:3306"
+  #    extends:
+  #      file: common-config.yml
+  #      service: microservice-db-config
 
-  microservice-db-config:
-    extends:
-      service: network-deploy-service
-    image: mysql
-    healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
-      timeout: 10s
-      retries: 10
-      interval: 10s
-      start_period: 10s
+  accounts:
+    image: sandeep4396/accounts-svc:latest
+    container_name: accounts-svc
+    ports:
+      - "8080:8080"
+    depends_on:
+      #      accountsDB:
+      #        condition: service_healthy
+      eurekaserver:
+        condition: service_healthy
+      configserver:
+        condition: service_healthy # This ensures that the accounts service will only start after the configuration server has started successfully. This is important because the accounts service relies on the configuration server to fetch its configuration properties, and starting it before the configuration server is ready could lead to errors or misconfigurations.
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      SPRING_APPLICATION_NAME: "accounts"
+    #      SPRING_DATASOURCE_URL: jdbc:mysql://accountsDB:3306/accountsDB # This configuration allows the accounts service to connect to the MySQL database running in the accountsDB container using the hostname "accountsDB" and the default MySQL port 3306. This is necessary for the accounts service to perform database operations such as storing and retrieving account information.
+    extends:
+      file: common-config.yml
+      service: microservice-eurekaserver-config
+  loans:
+    image: sandeep4396/loans-svc:latest
+    container_name: loans-svc
+    ports:
+      - "8090:8090"
+    depends_on:
+      #      loansDB:
+      #        condition: service_healthy
+      eurekaserver:
+        condition: service_healthy
+      configserver:
+        condition: service_healthy
+    environment:
+      SPRING_APPLICATION_NAME: "loans"
+    #      SPRING_DATASOURCE_URL: jdbc:mysql://loansDB:3306/loansDB # This configuration allows the loans service to connect to the MySQL database running in the loansDB container using the hostname "loansDB" and the default MySQL port 3306. This is necessary for the loans service to perform database operations such as storing and retrieving loan information.
+    extends:
+      file: common-config.yml
+      service: microservice-eurekaserver-config
+  cards:
+    image: sandeep4396/cards_svc:latest
+    container_name: cards-svc
+    ports:
+      - "9000:9000"
+    depends_on:
+      configserver:
+        condition: service_healthy
+      #      cardsDB:
+      #        condition: service_healthy
+      eurekaserver:
+        condition: service_healthy
+    environment:
+      SPRING_APPLICATION_NAME: "cards"
+    #      SPRING_DATASOURCE_URL: jdbc:mysql://cardsDB:3306/cardsDB # This configuration allows the cards service to connect to the MySQL database running in the cardsDB container using the hostname "cardsDB" and the default MySQL port 3306. This is necessary for the cards service to perform database operations such as storing and retrieving card information.
+    extends:
+      file: common-config.yml
+      service: microservice-eurekaserver-config
+
+  configserver:
+    image: sandeep4396/configserver:latest
+    container_name: configserver
+    ports:
+      - "8071:8071"
+    #    depends_on:
+    #      rabbit:
+    #        condition: service_healthy
+    healthcheck:
+      test: "curl --fail --silent http://localhost:8071/actuator/health/readiness | grep UP || exit 1" # This command checks the health of the configuration server by making a request to the /actuator/readiness endpoint and checking if the response contains "UP". If the response does not contain "UP", it will exit with a non-zero status, indicating that the service is not healthy.
+      interval: 10s # This specifies that the health check should be performed every 10s
+      timeout: 5s # This specifies that the health check should time out if it takes longer than 10s to complete.
+      retries: 10 # This specifies that the health check should be retried up to 3 times if it fails before marking the service as unhealthy.
+      start_period: 10s # This specifies that the health check should start after a 10s delay from the time the container starts. This allows the configuration server some time to initialize before the health checks begin, preventing false negatives during startup.
+    extends:
+      file: common-config.yml
+      service: microservice-base-config
+
+  eurekaserver:
+    image: sandeep4396/eurekaserver:latest
+    container_name: eurekaserver
+    ports:
+      - "8070:8070"
+    #    depends_on:
+    #      rabbit:
+    #        condition: service_healthy
+    healthcheck:
+      test: "curl --fail --silent http://localhost:8070/actuator/health/readiness | grep UP || exit 1" # This command checks the health of the configuration server by making a request to the /actuator/readiness endpoint and checking if the response contains "UP". If the response does not contain "UP", it will exit with a non-zero status, indicating that the service is not healthy.
+      interval: 10s # This specifies that the health check should be performed every 10s
+      timeout: 5s # This specifies that the health check should time out if it takes longer than 10s to complete.
+      retries: 10 # This specifies that the health check should be retried up to 3 times if it fails before marking the service as unhealthy.
+      start_period: 10s # This specifies that the health check should start after a 10s delay from the time the container starts. This allows the configuration server some time to initialize before the health checks begin, preventing false negatives during startup.
+    extends:
+      file: common-config.yml
+      service: microservice-configserver-config
+    depends_on:
+      configserver:
+        condition: service_healthy
+    environment:
+      SPRING_APPLICATION_NAME: "eurekaserver"
+
+# Rabbit MQ Image and configuration. This is necessary for the microservices to communicate with each other using RabbitMQ as the message broker. The health check ensures that the RabbitMQ server is up and running before the microservices attempt to connect to it, which helps prevent connection errors and ensures that the messaging infrastructure is ready for use.
+#  rabbit:
+#    image: rabbitmq:4-management
+#    hostname: rabbitmq
+#    ports:
+#      - "5672:5672" # This maps the RabbitMQ server to port 5672 on the host machine, allowing your microservices to connect to it using this port.
+#      - "15672:15672" # This maps the RabbitMQ management console to port 15672 on the host machine, allowing you to access it via http://localhost:15672. The default username and password for the RabbitMQ management console are "guest" and "guest", respectively.
+#    extends:
+#      file: common-config.yml
+#      service: network-deploy-service
+#    healthcheck:
+#      # This command checks if the RabbitMQ server is accepting connections on the specified port (5672).
+#      #If the command returns a successful result, it indicates that the RabbitMQ server is healthy and ready to accept connections from your microservices.
+#      #If it fails, it will indicate that the RabbitMQ server is not healthy, and your microservices may not be able to connect to it.
+#      test: rabbitmq-diagnostics check_port_connectivity
+#      interval: 10s
+#      timeout: 5s
+#      retries: 10
+#      start_period: 5s
+
+networks:
+  financial-services:
+    driver: bridge

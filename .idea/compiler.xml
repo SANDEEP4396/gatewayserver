@@ -8,6 +8,7 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="eurekaserver" />
+        <module name="gatewayserver" />
         <module name="configserver" />
       </profile>
       <profile name="Annotation profile for accounts" enabled="true">
@@ -18,8 +19,17 @@
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.42/lombok-1.18.42.jar" />
         </processorPath>
         <module name="cards_svc" />
-        <module name="accounts-svc" />
         <module name="loans-svc" />
+      </profile>
+      <profile name="Annotation profile for accounts-svc" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="false">
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.42/lombok-1.18.42.jar" />
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.42/lombok-1.18.42.jar" />
+        </processorPath>
+        <module name="accounts-svc" />
       </profile>
     </annotationProcessing>
   </component>
@@ -29,6 +39,7 @@
       <module name="cards_svc" options="-parameters" />
       <module name="configserver" options="-parameters" />
       <module name="eurekaserver" options="-parameters" />
+      <module name="gatewayserver" options="-parameters" />
       <module name="loans-svc" options="-parameters" />
     </option>
   </component>
