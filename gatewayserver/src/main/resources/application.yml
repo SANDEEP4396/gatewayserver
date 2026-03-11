@@ -29,3 +29,8 @@ info:
     description: "This service serves as the API gateway for the financial services application, routing requests to the appropriate microservices and providing a single entry point for clients."
     version: "1.0.0"
 
+logging:
+  level:
+    com:
+      configuration:
+        gatewayserver: DEBUG # This configuration sets the logging level for the "com.configuration.gatewayserver" package to DEBUG, which means that all log messages at the DEBUG level and above (INFO, WARN, ERROR) will be logged for this package. This can be useful for troubleshooting and debugging purposes, as it allows you to see detailed log messages from the gateway server during development and testing. However, in a production environment, you may want to set the logging level to a higher level (e.g., INFO or WARN) to reduce the amount of log output and improve performance.
