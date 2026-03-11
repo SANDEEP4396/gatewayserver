@@ -35,6 +35,12 @@ services:
     container_name: accounts-svc
     ports:
       - "8080:8080"
+    healthcheck:
+      test: "curl --fail --silent http://localhost:8080/actuator/health/readiness | grep UP || exit 1" # This command checks the health of the accounts service by making a request to the /actuator/readiness endpoint and checking if the response contains "UP". If the response does not contain "UP", it will exit with a non-zero status, indicating that the service is not healthy.
+      interval: 10s # This specifies that the health check should be performed every 10s
+      timeout: 5s # This specifies that the health check should time out if it takes longer than 10s to complete.
+      retries: 10 # This specifies that the health check should be retried up to 3 times if it fails before marking the service as unhealthy.
+      start_period: 10s # This specifies that the health check should start after a 10s delay from the time the container starts. This allows the accounts service some time to initialize before the health checks begin, preventing false negatives during startup.
     depends_on:
       #      accountsDB:
       #        condition: service_healthy
@@ -53,6 +59,12 @@ services:
     container_name: loans-svc
     ports:
       - "8090:8090"
+    healthcheck:
+      test: "curl --fail --silent http://localhost:8090/actuator/health/readiness | grep UP || exit 1" # This command checks the health of the accounts service by making a request to the /actuator/readiness endpoint and checking if the response contains "UP". If the response does not contain "UP", it will exit with a non-zero status, indicating that the service is not healthy.
+      interval: 10s # This specifies that the health check should be performed every 10s
+      timeout: 5s # This specifies that the health check should time out if it takes longer than 10s to complete.
+      retries: 10 # This specifies that the health check should be retried up to 3 times if it fails before marking the service as unhealthy.
+      start_period: 10s
     depends_on:
       #      loansDB:
       #        condition: service_healthy
@@ -71,6 +83,12 @@ services:
     container_name: cards-svc
     ports:
       - "9000:9000"
+    healthcheck:
+      test: "curl --fail --silent http://localhost:9000/actuator/health/readiness | grep UP || exit 1" # This command checks the health of the accounts service by making a request to the /actuator/readiness endpoint and checking if the response contains "UP". If the response does not contain "UP", it will exit with a non-zero status, indicating that the service is not healthy.
+      interval: 10s # This specifies that the health check should be performed every 10s
+      timeout: 5s # This specifies that the health check should time out if it takes longer than 10s to complete.
+      retries: 10 # This specifies that the health check should be retried up to 3 times if it fails before marking the service as unhealthy.
+      start_period: 10s
     depends_on:
       configserver:
         condition: service_healthy
@@ -126,26 +144,42 @@ services:
     environment:
       SPRING_APPLICATION_NAME: "eurekaserver"
 
-# Rabbit MQ Image and configuration. This is necessary for the microservices to communicate with each other using RabbitMQ as the message broker. The health check ensures that the RabbitMQ server is up and running before the microservices attempt to connect to it, which helps prevent connection errors and ensures that the messaging infrastructure is ready for use.
-#  rabbit:
-#    image: rabbitmq:4-management
-#    hostname: rabbitmq
-#    ports:
-#      - "5672:5672" # This maps the RabbitMQ server to port 5672 on the host machine, allowing your microservices to connect to it using this port.
-#      - "15672:15672" # This maps the RabbitMQ management console to port 15672 on the host machine, allowing you to access it via http://localhost:15672. The default username and password for the RabbitMQ management console are "guest" and "guest", respectively.
-#    extends:
-#      file: common-config.yml
-#      service: network-deploy-service
-#    healthcheck:
-#      # This command checks if the RabbitMQ server is accepting connections on the specified port (5672).
-#      #If the command returns a successful result, it indicates that the RabbitMQ server is healthy and ready to accept connections from your microservices.
-#      #If it fails, it will indicate that the RabbitMQ server is not healthy, and your microservices may not be able to connect to it.
-#      test: rabbitmq-diagnostics check_port_connectivity
-#      interval: 10s
-#      timeout: 5s
-#      retries: 10
-#      start_period: 5s
-
+  # Rabbit MQ Image and configuration. This is necessary for the microservices to communicate with each other using RabbitMQ as the message broker. The health check ensures that the RabbitMQ server is up and running before the microservices attempt to connect to it, which helps prevent connection errors and ensures that the messaging infrastructure is ready for use.
+  #  rabbit:
+  #    image: rabbitmq:4-management
+  #    hostname: rabbitmq
+  #    ports:
+  #      - "5672:5672" # This maps the RabbitMQ server to port 5672 on the host machine, allowing your microservices to connect to it using this port.
+  #      - "15672:15672" # This maps the RabbitMQ management console to port 15672 on the host machine, allowing you to access it via http://localhost:15672. The default username and password for the RabbitMQ management console are "guest" and "guest", respectively.
+  #    extends:
+  #      file: common-config.yml
+  #      service: network-deploy-service
+  #    healthcheck:
+  #      # This command checks if the RabbitMQ server is accepting connections on the specified port (5672).
+  #      #If the command returns a successful result, it indicates that the RabbitMQ server is healthy and ready to accept connections from your microservices.
+  #      #If it fails, it will indicate that the RabbitMQ server is not healthy, and your microservices may not be able to connect to it.
+  #      test: rabbitmq-diagnostics check_port_connectivity
+  #      interval: 10s
+  #      timeout: 5s
+  #      retries: 10
+  #      start_period: 5s
+  gatewayserver:
+    image: sandeep4396/gatewayserver:latest
+    container_name: gatewayserver-ms
+    ports:
+      - "8072:8072"
+    depends_on:
+      accounts:
+        condition: service_healthy
+      loans:
+        condition: service_healthy
+      cards:
+        condition: service_healthy
+    environment:
+      SPRING_APPLICATION_NAME: "gatewayserver"
+    extends:
+      file: common-config.yml
+      service: microservice-eurekaserver-config
 networks:
   financial-services:
     driver: bridge
