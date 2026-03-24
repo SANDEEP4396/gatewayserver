@@ -1,13 +1,18 @@
 package com.configuration.gatewayserver;
 
+import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
+import io.github.resilience4j.timelimiter.TimeLimiterConfig;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.circuitbreaker.resilience4j.ReactiveResilience4JCircuitBreakerFactory;
+import org.springframework.cloud.circuitbreaker.resilience4j.Resilience4JConfigBuilder;
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 
+import org.springframework.cloud.client.circuitbreaker.Customizer;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
@@ -56,4 +61,16 @@ public class GatewayserverApplication {
     // 2. It defines a route for the cards microservice that matches any path starting with /financial/cards/. It rewrites the path to remove the /financial/cards prefix before forwarding the request to the cards microservice registered with Eureka under the name "CARDS".
     // 3. It defines a route for the loans microservice that matches any path starting with /financial/loans/. It rewrites the path to remove the /financial/loans prefix before forwarding the request to the loans microservice registered with Eureka under the name "LOANS".
     // 4. The "lb://" prefix in the URI indicates that the gateway should use load balancing to route requests to the appropriate instances of the microservices registered with Eureka. This allows for better scalability and fault tolerance, as the gateway can distribute requests across multiple instances of each microservice.
+
+
+    @Bean
+    public Customizer<ReactiveResilience4JCircuitBreakerFactory> defaultCustomizer() {
+        return factory -> factory.configureDefault(id -> new Resilience4JConfigBuilder(id)
+                .circuitBreakerConfig(CircuitBreakerConfig.ofDefaults())
+                .timeLimiterConfig(TimeLimiterConfig.custom()
+                        .timeoutDuration(Duration.ofSeconds(14))
+                        .build())
+                .build());
+    }
+
 }

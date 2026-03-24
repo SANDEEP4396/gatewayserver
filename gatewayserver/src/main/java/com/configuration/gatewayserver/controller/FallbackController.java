@@ -9,6 +9,6 @@ public class FallbackController {
 
     @RequestMapping("/contact-support")
     public Mono<String> accountsServiceFallback() {
-        return Mono.just("Downstream service is currently unavailable. Please contact support team");
+        return Mono.just("CircuitBreaker - Downstream service is currently unavailable. Please contact support team");
     }
 }
