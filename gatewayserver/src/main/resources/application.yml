@@ -34,3 +34,12 @@ logging:
     com:
       configuration:
         gatewayserver: DEBUG # This configuration sets the logging level for the "com.configuration.gatewayserver" package to DEBUG, which means that all log messages at the DEBUG level and above (INFO, WARN, ERROR) will be logged for this package. This can be useful for troubleshooting and debugging purposes, as it allows you to see detailed log messages from the gateway server during development and testing. However, in a production environment, you may want to set the logging level to a higher level (e.g., INFO or WARN) to reduce the amount of log output and improve performance.
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowSize: 10 # This configuration sets the size of the sliding window for the circuit breaker to 10, which means that the circuit breaker will consider the last 10 calls to determine whether to open or close the circuit. This can help to smooth out fluctuations in call success rates and provide a more stable behavior for the circuit breaker.
+        permittedNumberOfCallsInHalfOpenState: 2
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10000

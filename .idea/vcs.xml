@@ -4,7 +4,6 @@
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/accounts-svc" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/cards_svc" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/configserver" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/loans-svc" vcs="Git" />
   </component>
 </project>
