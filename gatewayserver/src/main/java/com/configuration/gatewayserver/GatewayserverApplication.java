@@ -5,7 +5,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 
 @SpringBootApplication
@@ -27,12 +30,20 @@ public class GatewayserverApplication {
                 .route(path -> path.path("/financial/cards/**")
                         .filters(filter -> filter.rewritePath("/financial/cards/(?<segment>.*)", "/${segment}")
                                 .addResponseHeader("X-Response-Time", LocalDateTime.now().toString())
+                                .retry(retryConfig -> retryConfig.setRetries(3)
+                                        .setMethods(HttpMethod.GET)
+                                        .setBackoff(Duration.ofMillis(100),Duration.ofMillis(1000),2, true)
+                                        .setStatuses(HttpStatus.INTERNAL_SERVER_ERROR))
                                 .circuitBreaker((circuitBreakerConfig) -> circuitBreakerConfig.setName("cardsCircuitBreaker")
                                         .setFallbackUri("forward:/contact-support")))
                         .uri("lb://CARDS"))
                 .route(path -> path.path("/financial/loans/**")
                         .filters(filter -> filter.rewritePath("/financial/loans/(?<segment>.*)", "/${segment}")
                                 .addResponseHeader("X-Response-Time", LocalDateTime.now().toString())
+                                .retry(retryConfig -> retryConfig.setRetries(3)
+                                        .setMethods(HttpMethod.GET)
+                                        .setBackoff(Duration.ofMillis(100),Duration.ofMillis(1000),2, true)
+                                        .setStatuses(HttpStatus.INTERNAL_SERVER_ERROR))
                                 .circuitBreaker((circuitBreakerConfig) -> circuitBreakerConfig.setName("cardsCircuitBreaker")
                                         .setFallbackUri("forward:/contact-support")))
                         .uri("lb://LOANS"))

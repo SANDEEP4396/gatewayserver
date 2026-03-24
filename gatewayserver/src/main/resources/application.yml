@@ -11,6 +11,9 @@ spring:
             locator:
               lowerCaseServiceId: true
               enabled: false # This configuration enables the service discovery feature of Spring Cloud Gateway, allowing it to automatically discover and route requests to other services registered with the service registry (e.g., Eureka). This can simplify the configuration of routes and make it easier to manage the routing of requests in a microservices architecture.
+      httpclient:
+        connect-timeout: 5000 # This configuration sets the connection timeout for the HTTP client used by Spring Cloud Gateway to 5000 milliseconds (5 seconds). This means that if the gateway is unable to establish a connection to a downstream service within this time frame, it will throw a timeout exception. Setting an appropriate connection timeout can help to improve the responsiveness of the gateway and prevent it from hanging indefinitely when trying to connect to an unresponsive service.
+        response-timeout: 2s # This configuration sets the response timeout for the HTTP client used by Spring Cloud Gateway to 5000 milliseconds (5 seconds). This means that if the gateway does not receive a response from a downstream service within this time frame after successfully establishing a connection, it will throw a timeout exception. Setting an appropriate response timeout can help to improve the responsiveness of the gateway and prevent it from hanging indefinitely when waiting for a response from an unresponsive service.
 management:
   info:
     env:
