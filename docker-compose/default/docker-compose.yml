@@ -29,7 +29,18 @@ services:
 #    extends:
 #      file: common-config.yml
 #      service: microservice-db-config
-
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    extends:
+      file: common-config.yml
+      service: network-deploy-service
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG || exit 1"] # This command checks if the Redis server is responsive by sending a PING command and checking for a PONG response. If the response is not PONG, it will exit with a non-zero status, indicating that the Redis server is not healthy.
+      timeout: 10s
+      retries: 10
+      interval: 10s
   accounts:
     image: sandeep4396/accounts-svc:latest
     container_name: accounts-svc
@@ -169,6 +180,8 @@ services:
     ports:
       - "8072:8072"
     depends_on:
+      redis:
+        condition: service_healthy
       accounts:
         condition: service_healthy
       loans:
@@ -177,6 +190,10 @@ services:
         condition: service_healthy
     environment:
       SPRING_APPLICATION_NAME: "gatewayserver"
+      SPRING_DATA_REDIS_HOST: redis # This configuration allows the gateway server to connect to the Redis server running in the redis container using the hostname "redis". This is necessary for the gateway server to perform caching and other Redis-related operations.
+      SPRING_DATA_REDIS_PORT: 6379 # This configuration allows the gateway server to connect to the Redis server running in the redis container using the default Redis port 6379. This is necessary for the gateway server to perform caching and other Redis-related operations.
+      SPRING_DATA_REDIS_TIMEOUT: 1s
+      SPRING_DATA_REDIS_CONNECT-TIMEOUT: 2s
     extends:
       file: common-config.yml
       service: microservice-eurekaserver-config

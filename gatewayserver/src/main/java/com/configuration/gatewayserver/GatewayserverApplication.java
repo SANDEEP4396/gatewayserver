@@ -6,6 +6,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.circuitbreaker.resilience4j.ReactiveResilience4JCircuitBreakerFactory;
 import org.springframework.cloud.circuitbreaker.resilience4j.Resilience4JConfigBuilder;
+import org.springframework.cloud.gateway.filter.ratelimit.KeyResolver;
+import org.springframework.cloud.gateway.filter.ratelimit.RedisRateLimiter;
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
@@ -13,6 +15,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 
 import org.springframework.cloud.client.circuitbreaker.Customizer;
+import reactor.core.publisher.Mono;
+
 import java.time.Duration;
 import java.time.LocalDateTime;
 
@@ -35,6 +39,7 @@ public class GatewayserverApplication {
                 .route(path -> path.path("/financial/cards/**")
                         .filters(filter -> filter.rewritePath("/financial/cards/(?<segment>.*)", "/${segment}")
                                 .addResponseHeader("X-Response-Time", LocalDateTime.now().toString())
+                                .requestRateLimiter(config -> config.setRateLimiter(redisRateLimiter()).setKeyResolver(userKeyResolver()))
                                 .retry(retryConfig -> retryConfig.setRetries(3)
                                         .setMethods(HttpMethod.GET)
                                         .setBackoff(Duration.ofMillis(100),Duration.ofMillis(1000),2, true)
@@ -45,6 +50,7 @@ public class GatewayserverApplication {
                 .route(path -> path.path("/financial/loans/**")
                         .filters(filter -> filter.rewritePath("/financial/loans/(?<segment>.*)", "/${segment}")
                                 .addResponseHeader("X-Response-Time", LocalDateTime.now().toString())
+                                .requestRateLimiter(config -> config.setRateLimiter(redisRateLimiter()).setKeyResolver(userKeyResolver()))
                                 .retry(retryConfig -> retryConfig.setRetries(3)
                                         .setMethods(HttpMethod.GET)
                                         .setBackoff(Duration.ofMillis(100),Duration.ofMillis(1000),2, true)
@@ -73,4 +79,16 @@ public class GatewayserverApplication {
                 .build());
     }
 
+    @Bean
+    public KeyResolver userKeyResolver() {
+        return exchange -> Mono.justOrEmpty(exchange.getRequest().getHeaders().getFirst("user"))
+                .defaultIfEmpty("anonymous");
+    }
+
+    // For each user, allow 1 request per second with a burst capacity of 1 and a replenish rate of 1.
+    // This means that if a user makes more than 1 request in a second, the excess requests will be rejected until the rate limit is replenished.
+    @Bean
+    public RedisRateLimiter redisRateLimiter() {
+        return new RedisRateLimiter(10, 10, 10); // 1 request per second with a burst capacity of 1 and a replenish rate of 1
+    }
 }

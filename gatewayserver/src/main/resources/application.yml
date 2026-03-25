@@ -3,6 +3,12 @@ spring:
     name: "gatewayserver"
   config:
     import: "optional:configserver:http://localhost:8071/"
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      connect-timeout: 2s # This configuration sets the connection timeout for Redis to 2000 milliseconds (2 seconds). This means that if the application is unable to establish a connection to the Redis server within this time frame, it will throw a timeout exception. Setting an appropriate connection timeout can help to improve the responsiveness of the application and prevent it from hanging indefinitely when trying to connect to an unresponsive Redis server.
+      timeout: 4s
   cloud:
     gateway:
       server:
@@ -46,3 +52,4 @@ resilience4j:
         permittedNumberOfCallsInHalfOpenState: 2
         failureRateThreshold: 50
         waitDurationInOpenState: 10000
+
