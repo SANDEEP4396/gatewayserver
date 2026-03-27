@@ -1,0 +1,29 @@
+global:
+  scrape_interval: 5s # Set the default scrape interval to 5 seconds. This means that Prometheus will scrape metrics from the configured targets every 5 seconds. You can adjust this value based on your monitoring needs and the expected frequency of metric updates.
+  evaluation_interval: 5s # Set the default evaluation interval to 5 seconds. This means that Prometheus will evaluate the configured alerting and recording rules every 5 seconds. You can adjust this value based on your monitoring needs and the expected frequency of rule evaluations.
+
+scrape_configs:
+  - job_name: 'accounts-svc' # This is the name of the scrape job. It can be any name you choose, and it will be used to identify the metrics collected from this target in Prometheus.
+    metrics_path: '/actuator/prometheus' # This specifies the path to scrape for metrics. In this case, it is set to '/actuator/prometheus', which is the default endpoint for Prometheus metrics in Spring Boot applications when using the Micrometer library. You should ensure that your application is configured to expose metrics at this endpoint for Prometheus to successfully collect metrics.
+    static_configs:
+      - targets: ['accounts:8080'] # This specifies the target to scrape for metrics. In this case, it is set to 'accounts-svc:9000', which means that Prometheus will scrape metrics from the service running at the hostname 'accounts-svc' on port 9000. You should ensure that the service is running and accessible at this address for Prometheus to successfully collect metrics.
+  - job_name: 'cards-svc'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['cards:9000']
+  - job_name: 'loans-svc'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['loans:8090']
+  - job_name: 'gatewayserver'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['gatewayserver:8072']
+  - job_name: 'eurekaserver'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['eurekaserver:8070']
+  - job_name: 'configserver'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['configserver:8071']
