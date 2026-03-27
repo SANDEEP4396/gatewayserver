@@ -272,6 +272,7 @@ services:
         condition: service_healthy # This ensures that the accounts service will only start after the configuration server has started successfully. This is important because the accounts service relies on the configuration server to fetch its configuration properties, and starting it before the configuration server is ready could lead to errors or misconfigurations.
     environment:
       SPRING_APPLICATION_NAME: "accounts"
+      OTEL_SERVICE_NAME: "accounts"
 #      SPRING_DATASOURCE_URL: jdbc:mysql://accountsDB:3306/accountsDB # This configuration allows the accounts service to connect to the MySQL database running in the accountsDB container using the hostname "accountsDB" and the default MySQL port 3306. This is necessary for the accounts service to perform database operations such as storing and retrieving account information.
     extends:
       file: common-config.yml
@@ -296,6 +297,7 @@ services:
         condition: service_healthy
     environment:
       SPRING_APPLICATION_NAME: "loans"
+      OTEL_SERVICE_NAME: "loans"
 #      SPRING_DATASOURCE_URL: jdbc:mysql://loansDB:3306/loansDB # This configuration allows the loans service to connect to the MySQL database running in the loansDB container using the hostname "loansDB" and the default MySQL port 3306. This is necessary for the loans service to perform database operations such as storing and retrieving loan information.
     extends:
       file: common-config.yml
@@ -320,6 +322,7 @@ services:
         condition: service_healthy
     environment:
       SPRING_APPLICATION_NAME: "cards"
+      OTEL_SERVICE_NAME: "cards"
 #      SPRING_DATASOURCE_URL: jdbc:mysql://cardsDB:3306/cardsDB # This configuration allows the cards service to connect to the MySQL database running in the cardsDB container using the hostname "cardsDB" and the default MySQL port 3306. This is necessary for the cards service to perform database operations such as storing and retrieving card information.
     extends:
       file: common-config.yml
@@ -342,6 +345,8 @@ services:
     extends:
       file: common-config.yml
       service: microservice-base-config
+    environment:
+      OTEL_SERVICE_NAME: "configserver"
 
   eurekaserver:
     image: sandeep4396/eurekaserver:latest
@@ -365,6 +370,7 @@ services:
         condition: service_healthy
     environment:
       SPRING_APPLICATION_NAME: "eurekaserver"
+      OTEL_SERVICE_NAME: "eurekaserver"
 
 # Rabbit MQ Image and configuration. This is necessary for the microservices to communicate with each other using RabbitMQ as the message broker. The health check ensures that the RabbitMQ server is up and running before the microservices attempt to connect to it, which helps prevent connection errors and ensures that the messaging infrastructure is ready for use.
 #  rabbit:
@@ -405,6 +411,7 @@ services:
 #      SPRING_DATA_REDIS_PORT: 6379 # This configuration allows the gateway server to connect to the Redis server running in the redis container using the default Redis port 6379. This is necessary for the gateway server to perform caching and other Redis-related operations.
 #      SPRING_DATA_REDIS_TIMEOUT: 1s
 #      SPRING_DATA_REDIS_CONNECT-TIMEOUT: 2s
+      OTEL_SERVICE_NAME: "gatewayserver"
     extends:
       file: common-config.yml
       service: microservice-eurekaserver-config

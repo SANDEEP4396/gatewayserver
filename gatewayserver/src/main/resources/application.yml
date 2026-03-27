@@ -46,7 +46,9 @@ logging:
     com:
       configuration:
         gatewayserver: DEBUG # This configuration sets the logging level for the "com.configuration.gatewayserver" package to DEBUG, which means that all log messages at the DEBUG level and above (INFO, WARN, ERROR) will be logged for this package. This can be useful for troubleshooting and debugging purposes, as it allows you to see detailed log messages from the gateway server during development and testing. However, in a production environment, you may want to set the logging level to a higher level (e.g., INFO or WARN) to reduce the amount of log output and improve performance.
-
+  pattern:
+    # %5p: This part of the pattern includes the log level (e.g., DEBUG, INFO, WARN, ERROR) in the log output, formatted to take up at least 5 characters. This helps to align the log levels in the output for better readability.
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
 resilience4j:
   circuitbreaker:
     configs:
