@@ -28,6 +28,9 @@ management:
     web:
       exposure:
         include: "*"
+  metrics:
+    tags:
+      application: ${spring.application.name}
   endpoint:
     gateway:
       access: unrestricted # This configuration allows unrestricted access to the gateway endpoint, which provides information about the routes and filters configured in the API gateway. This can be useful for monitoring and debugging purposes, but in a production environment, you should consider restricting access to this endpoint for security reasons.
