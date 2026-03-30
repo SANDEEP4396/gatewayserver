@@ -94,12 +94,10 @@ services:
       file: common-config.yml
 
   tempo:
-    image: grafana/tempo:latest
+    image: grafana/tempo:2.4.2
     container_name: tempo
-    command:
-      - config.file/etc/tempo-config.yml
+    command: -config.file /etc/tempo-config.yml
     ports:
-      - "4317:4317"
       - "4318:4318"
       - "3110:3100"
     volumes:
@@ -107,6 +105,7 @@ services:
     extends:
       service: network-deploy-service
       file: common-config.yml
+
   grafana:
       image: grafana/grafana:latest
       environment:
@@ -126,9 +125,9 @@ services:
         - ../observability/grafana/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml
       healthcheck:
         test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1" ]
-        interval: 10s
+        interval: 20s
         timeout: 5s
-        retries: 5
+        retries: 25
       extends:
         service: network-deploy-service
         file: common-config.yml
@@ -273,9 +272,9 @@ services:
       - "8080:8080"
     healthcheck:
       test: "curl --fail --silent http://localhost:8080/actuator/health/readiness | grep UP || exit 1" # This command checks the health of the accounts service by making a request to the /actuator/readiness endpoint and checking if the response contains "UP". If the response does not contain "UP", it will exit with a non-zero status, indicating that the service is not healthy.
-      interval: 10s # This specifies that the health check should be performed every 10s
+      interval: 20s # This specifies that the health check should be performed every 10s
       timeout: 5s # This specifies that the health check should time out if it takes longer than 10s to complete.
-      retries: 10 # This specifies that the health check should be retried up to 3 times if it fails before marking the service as unhealthy.
+      retries: 20 # This specifies that the health check should be retried up to 3 times if it fails before marking the service as unhealthy.
       start_period: 10s # This specifies that the health check should start after a 10s delay from the time the container starts. This allows the accounts service some time to initialize before the health checks begin, preventing false negatives during startup.
     depends_on:
 #      accountsDB:
@@ -298,9 +297,9 @@ services:
       - "8090:8090"
     healthcheck:
       test: "curl --fail --silent http://localhost:8090/actuator/health/readiness | grep UP || exit 1" # This command checks the health of the accounts service by making a request to the /actuator/readiness endpoint and checking if the response contains "UP". If the response does not contain "UP", it will exit with a non-zero status, indicating that the service is not healthy.
-      interval: 10s # This specifies that the health check should be performed every 10s
+      interval: 20s # This specifies that the health check should be performed every 10s
       timeout: 5s # This specifies that the health check should time out if it takes longer than 10s to complete.
-      retries: 10 # This specifies that the health check should be retried up to 3 times if it fails before marking the service as unhealthy.
+      retries: 20 # This specifies that the health check should be retried up to 3 times if it fails before marking the service as unhealthy.
       start_period: 10s
     depends_on:
 #      loansDB:
@@ -323,9 +322,9 @@ services:
       - "9000:9000"
     healthcheck:
       test: "curl --fail --silent http://localhost:9000/actuator/health/readiness | grep UP || exit 1" # This command checks the health of the accounts service by making a request to the /actuator/readiness endpoint and checking if the response contains "UP". If the response does not contain "UP", it will exit with a non-zero status, indicating that the service is not healthy.
-      interval: 10s # This specifies that the health check should be performed every 10s
+      interval: 20s # This specifies that the health check should be performed every 10s
       timeout: 5s # This specifies that the health check should time out if it takes longer than 10s to complete.
-      retries: 10 # This specifies that the health check should be retried up to 3 times if it fails before marking the service as unhealthy.
+      retries: 20 # This specifies that the health check should be retried up to 3 times if it fails before marking the service as unhealthy.
       start_period: 10s
     depends_on:
       configserver:
@@ -352,9 +351,9 @@ services:
 #        condition: service_healthy
     healthcheck:
       test: "curl --fail --silent http://localhost:8071/actuator/health/readiness | grep UP || exit 1" # This command checks the health of the configuration server by making a request to the /actuator/readiness endpoint and checking if the response contains "UP". If the response does not contain "UP", it will exit with a non-zero status, indicating that the service is not healthy.
-      interval: 10s # This specifies that the health check should be performed every 10s
+      interval: 20s # This specifies that the health check should be performed every 10s
       timeout: 5s # This specifies that the health check should time out if it takes longer than 10s to complete.
-      retries: 10 # This specifies that the health check should be retried up to 3 times if it fails before marking the service as unhealthy.
+      retries: 20 # This specifies that the health check should be retried up to 3 times if it fails before marking the service as unhealthy.
       start_period: 10s # This specifies that the health check should start after a 10s delay from the time the container starts. This allows the configuration server some time to initialize before the health checks begin, preventing false negatives during startup.
     extends:
       file: common-config.yml
@@ -372,9 +371,9 @@ services:
     #        condition: service_healthy
     healthcheck:
       test: "curl --fail --silent http://localhost:8070/actuator/health/readiness | grep UP || exit 1" # This command checks the health of the configuration server by making a request to the /actuator/readiness endpoint and checking if the response contains "UP". If the response does not contain "UP", it will exit with a non-zero status, indicating that the service is not healthy.
-      interval: 10s # This specifies that the health check should be performed every 10s
+      interval: 20s # This specifies that the health check should be performed every 10s
       timeout: 5s # This specifies that the health check should time out if it takes longer than 10s to complete.
-      retries: 10 # This specifies that the health check should be retried up to 3 times if it fails before marking the service as unhealthy.
+      retries: 20 # This specifies that the health check should be retried up to 3 times if it fails before marking the service as unhealthy.
       start_period: 10s # This specifies that the health check should start after a 10s delay from the time the container starts. This allows the configuration server some time to initialize before the health checks begin, preventing false negatives during startup.
     extends:
       file: common-config.yml

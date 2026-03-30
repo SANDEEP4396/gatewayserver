@@ -82,6 +82,31 @@ services:
       service: network-deploy-service
       file: common-config.yml
 
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ../observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    extends:
+      service: network-deploy-service
+      file: common-config.yml
+
+  tempo:
+    image: grafana/tempo:latest
+    container_name: tempo
+    command:
+      - config.file/etc/tempo-config.yml
+    ports:
+      - "4318:4318"
+      - "3110:3100"
+    volumes:
+      - ../observability/tempo/tempo.yml:/etc/tempo-config.yml
+    extends:
+      service: network-deploy-service
+      file: common-config.yml
+
   grafana:
     image: grafana/grafana:latest
     environment:
@@ -94,27 +119,16 @@ services:
       - sh
       - -euc
       - |
-        mkdir -p /etc/grafana/provisioning/datasources
-        cat <<EOF > /etc/grafana/provisioning/datasources/ds.yaml
-        apiVersion: 1
-        datasources:
-          - name: Loki
-            type: loki
-            access: proxy
-            url: http://gateway:3100
-            jsonData:
-              httpHeaderName1: "X-Scope-OrgID"
-            secureJsonData:
-              httpHeaderValue1: "tenant1"
-        EOF
         /run.sh
     ports:
       - "3000:3000"
+    volumes:
+      - ../observability/grafana/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1" ]
-      interval: 10s
+      interval: 20s
       timeout: 5s
-      retries: 5
+      retries: 25
     extends:
       service: network-deploy-service
       file: common-config.yml
@@ -259,9 +273,9 @@ services:
       - "8080:8080"
     healthcheck:
       test: "curl --fail --silent http://localhost:8080/actuator/health/readiness | grep UP || exit 1" # This command checks the health of the accounts service by making a request to the /actuator/readiness endpoint and checking if the response contains "UP". If the response does not contain "UP", it will exit with a non-zero status, indicating that the service is not healthy.
-      interval: 10s # This specifies that the health check should be performed every 10s
+      interval: 20s # This specifies that the health check should be performed every 10s
       timeout: 5s # This specifies that the health check should time out if it takes longer than 10s to complete.
-      retries: 10 # This specifies that the health check should be retried up to 3 times if it fails before marking the service as unhealthy.
+      retries: 20 # This specifies that the health check should be retried up to 3 times if it fails before marking the service as unhealthy.
       start_period: 10s # This specifies that the health check should start after a 10s delay from the time the container starts. This allows the accounts service some time to initialize before the health checks begin, preventing false negatives during startup.
     depends_on:
       #      accountsDB:
@@ -272,6 +286,7 @@ services:
         condition: service_healthy # This ensures that the accounts service will only start after the configuration server has started successfully. This is important because the accounts service relies on the configuration server to fetch its configuration properties, and starting it before the configuration server is ready could lead to errors or misconfigurations.
     environment:
       SPRING_APPLICATION_NAME: "accounts"
+      OTEL_SERVICE_NAME: "accounts"
     #      SPRING_DATASOURCE_URL: jdbc:mysql://accountsDB:3306/accountsDB # This configuration allows the accounts service to connect to the MySQL database running in the accountsDB container using the hostname "accountsDB" and the default MySQL port 3306. This is necessary for the accounts service to perform database operations such as storing and retrieving account information.
     extends:
       file: common-config.yml
@@ -283,9 +298,9 @@ services:
       - "8090:8090"
     healthcheck:
       test: "curl --fail --silent http://localhost:8090/actuator/health/readiness | grep UP || exit 1" # This command checks the health of the accounts service by making a request to the /actuator/readiness endpoint and checking if the response contains "UP". If the response does not contain "UP", it will exit with a non-zero status, indicating that the service is not healthy.
-      interval: 10s # This specifies that the health check should be performed every 10s
+      interval: 20s # This specifies that the health check should be performed every 10s
       timeout: 5s # This specifies that the health check should time out if it takes longer than 10s to complete.
-      retries: 10 # This specifies that the health check should be retried up to 3 times if it fails before marking the service as unhealthy.
+      retries: 20 # This specifies that the health check should be retried up to 3 times if it fails before marking the service as unhealthy.
       start_period: 10s
     depends_on:
       #      loansDB:
@@ -296,6 +311,7 @@ services:
         condition: service_healthy
     environment:
       SPRING_APPLICATION_NAME: "loans"
+      OTEL_SERVICE_NAME: "loans"
     #      SPRING_DATASOURCE_URL: jdbc:mysql://loansDB:3306/loansDB # This configuration allows the loans service to connect to the MySQL database running in the loansDB container using the hostname "loansDB" and the default MySQL port 3306. This is necessary for the loans service to perform database operations such as storing and retrieving loan information.
     extends:
       file: common-config.yml
@@ -307,9 +323,9 @@ services:
       - "9000:9000"
     healthcheck:
       test: "curl --fail --silent http://localhost:9000/actuator/health/readiness | grep UP || exit 1" # This command checks the health of the accounts service by making a request to the /actuator/readiness endpoint and checking if the response contains "UP". If the response does not contain "UP", it will exit with a non-zero status, indicating that the service is not healthy.
-      interval: 10s # This specifies that the health check should be performed every 10s
+      interval: 20s # This specifies that the health check should be performed every 10s
       timeout: 5s # This specifies that the health check should time out if it takes longer than 10s to complete.
-      retries: 10 # This specifies that the health check should be retried up to 3 times if it fails before marking the service as unhealthy.
+      retries: 20 # This specifies that the health check should be retried up to 3 times if it fails before marking the service as unhealthy.
       start_period: 10s
     depends_on:
       configserver:
@@ -320,6 +336,7 @@ services:
         condition: service_healthy
     environment:
       SPRING_APPLICATION_NAME: "cards"
+      OTEL_SERVICE_NAME: "cards"
     #      SPRING_DATASOURCE_URL: jdbc:mysql://cardsDB:3306/cardsDB # This configuration allows the cards service to connect to the MySQL database running in the cardsDB container using the hostname "cardsDB" and the default MySQL port 3306. This is necessary for the cards service to perform database operations such as storing and retrieving card information.
     extends:
       file: common-config.yml
@@ -335,13 +352,15 @@ services:
     #        condition: service_healthy
     healthcheck:
       test: "curl --fail --silent http://localhost:8071/actuator/health/readiness | grep UP || exit 1" # This command checks the health of the configuration server by making a request to the /actuator/readiness endpoint and checking if the response contains "UP". If the response does not contain "UP", it will exit with a non-zero status, indicating that the service is not healthy.
-      interval: 10s # This specifies that the health check should be performed every 10s
+      interval: 20s # This specifies that the health check should be performed every 10s
       timeout: 5s # This specifies that the health check should time out if it takes longer than 10s to complete.
-      retries: 10 # This specifies that the health check should be retried up to 3 times if it fails before marking the service as unhealthy.
+      retries: 20 # This specifies that the health check should be retried up to 3 times if it fails before marking the service as unhealthy.
       start_period: 10s # This specifies that the health check should start after a 10s delay from the time the container starts. This allows the configuration server some time to initialize before the health checks begin, preventing false negatives during startup.
     extends:
       file: common-config.yml
       service: microservice-base-config
+    environment:
+      OTEL_SERVICE_NAME: "configserver"
 
   eurekaserver:
     image: sandeep4396/eurekaserver:latest
@@ -353,9 +372,9 @@ services:
     #        condition: service_healthy
     healthcheck:
       test: "curl --fail --silent http://localhost:8070/actuator/health/readiness | grep UP || exit 1" # This command checks the health of the configuration server by making a request to the /actuator/readiness endpoint and checking if the response contains "UP". If the response does not contain "UP", it will exit with a non-zero status, indicating that the service is not healthy.
-      interval: 10s # This specifies that the health check should be performed every 10s
+      interval: 20s # This specifies that the health check should be performed every 10s
       timeout: 5s # This specifies that the health check should time out if it takes longer than 10s to complete.
-      retries: 10 # This specifies that the health check should be retried up to 3 times if it fails before marking the service as unhealthy.
+      retries: 20 # This specifies that the health check should be retried up to 3 times if it fails before marking the service as unhealthy.
       start_period: 10s # This specifies that the health check should start after a 10s delay from the time the container starts. This allows the configuration server some time to initialize before the health checks begin, preventing false negatives during startup.
     extends:
       file: common-config.yml
@@ -365,6 +384,7 @@ services:
         condition: service_healthy
     environment:
       SPRING_APPLICATION_NAME: "eurekaserver"
+      OTEL_SERVICE_NAME: "eurekaserver"
 
   # Rabbit MQ Image and configuration. This is necessary for the microservices to communicate with each other using RabbitMQ as the message broker. The health check ensures that the RabbitMQ server is up and running before the microservices attempt to connect to it, which helps prevent connection errors and ensures that the messaging infrastructure is ready for use.
   #  rabbit:
@@ -401,10 +421,11 @@ services:
         condition: service_healthy
     environment:
       SPRING_APPLICATION_NAME: "gatewayserver"
-    #      SPRING_DATA_REDIS_HOST: redis # This configuration allows the gateway server to connect to the Redis server running in the redis container using the hostname "redis". This is necessary for the gateway server to perform caching and other Redis-related operations.
-    #      SPRING_DATA_REDIS_PORT: 6379 # This configuration allows the gateway server to connect to the Redis server running in the redis container using the default Redis port 6379. This is necessary for the gateway server to perform caching and other Redis-related operations.
-    #      SPRING_DATA_REDIS_TIMEOUT: 1s
-    #      SPRING_DATA_REDIS_CONNECT-TIMEOUT: 2s
+      #      SPRING_DATA_REDIS_HOST: redis # This configuration allows the gateway server to connect to the Redis server running in the redis container using the hostname "redis". This is necessary for the gateway server to perform caching and other Redis-related operations.
+      #      SPRING_DATA_REDIS_PORT: 6379 # This configuration allows the gateway server to connect to the Redis server running in the redis container using the default Redis port 6379. This is necessary for the gateway server to perform caching and other Redis-related operations.
+      #      SPRING_DATA_REDIS_TIMEOUT: 1s
+      #      SPRING_DATA_REDIS_CONNECT-TIMEOUT: 2s
+      OTEL_SERVICE_NAME: "gatewayserver"
     extends:
       file: common-config.yml
       service: microservice-eurekaserver-config

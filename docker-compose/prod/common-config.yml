@@ -13,9 +13,10 @@ services:
       SPRING_PROFILES_ACTIVE: prod
         #      SPRING_RABBITMQ_HOST: rabbit # Required because the microservices need to connect to the RabbitMQ server using the hostname "rabbit" as defined in the docker-compose.yml file. This allows the microservices to communicate with the RabbitMQ server for messaging and event-driven communication.
       # SPRING_RABBITMQ_PORT: 5672 # This is not required because the default port for RabbitMQ is already 5672, so it will be used automatically if not specified.
-      JAVA_TOOL_OPTIONS: "-javaagent:/app/libs/opentelemetry-javaaagent-2.26.1.jar"
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318 # This configuration sets the endpoint for the OpenTelemetry OTLP exporter to "http://otel-collector:4317". This means that the application will send its telemetry data (traces, metrics, and logs) to the OpenTelemetry Collector running at this endpoint. The OpenTelemetry Collector can then process and export this data to various backends for monitoring and analysis.
+      JAVA_TOOL_OPTIONS: "-javaagent:/app/libs/opentelemetry-javaagent-2.22.0.jar"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318 # This configuration sets the endpoint for the OpenTelemetry OTLP exporter to "http://tempo:4318". This means that the application will send its telemetry data (traces, metrics, and logs) to the OpenTelemetry Collector running at this endpoint. The OpenTelemetry Collector can then process and export this data to various backends for monitoring and analysis.
       OTEL_LOGS_EXPORTER: none
+      OTEL_METRICS_EXPORTER: none
   microservice-configserver-config:
     extends:
       service: microservice-base-config
