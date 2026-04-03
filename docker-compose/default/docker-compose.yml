@@ -93,6 +93,19 @@ services:
       service: network-deploy-service
       file: common-config.yml
 
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: keycloak
+    environment:
+      - KC_BOOTSTRAP_ADMIN_USERNAME=admin
+      - KC_BOOTSTRAP_ADMIN_PASSWORD=admin
+    ports:
+      - "127.0.0.1:7080:8080"
+    command: "start-dev"
+    extends:
+      service: network-deploy-service
+      file: common-config.yml
+
   tempo:
     image: grafana/tempo:2.4.2
     container_name: tempo
@@ -268,8 +281,6 @@ services:
   accounts:
     image: sandeep4396/accounts-svc:latest
     container_name: accounts-svc
-    ports:
-      - "8080:8080"
     healthcheck:
       test: "curl --fail --silent http://localhost:8080/actuator/health/readiness | grep UP || exit 1" # This command checks the health of the accounts service by making a request to the /actuator/readiness endpoint and checking if the response contains "UP". If the response does not contain "UP", it will exit with a non-zero status, indicating that the service is not healthy.
       interval: 20s # This specifies that the health check should be performed every 10s
@@ -293,8 +304,6 @@ services:
   loans:
     image: sandeep4396/loans-svc:latest
     container_name: loans-svc
-    ports:
-      - "8090:8090"
     healthcheck:
       test: "curl --fail --silent http://localhost:8090/actuator/health/readiness | grep UP || exit 1" # This command checks the health of the accounts service by making a request to the /actuator/readiness endpoint and checking if the response contains "UP". If the response does not contain "UP", it will exit with a non-zero status, indicating that the service is not healthy.
       interval: 20s # This specifies that the health check should be performed every 10s
@@ -318,8 +327,6 @@ services:
   cards:
     image: sandeep4396/cards_svc:latest
     container_name: cards-svc
-    ports:
-      - "9000:9000"
     healthcheck:
       test: "curl --fail --silent http://localhost:9000/actuator/health/readiness | grep UP || exit 1" # This command checks the health of the accounts service by making a request to the /actuator/readiness endpoint and checking if the response contains "UP". If the response does not contain "UP", it will exit with a non-zero status, indicating that the service is not healthy.
       interval: 20s # This specifies that the health check should be performed every 10s
@@ -420,6 +427,7 @@ services:
         condition: service_healthy
     environment:
       SPRING_APPLICATION_NAME: "gatewayserver"
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK-SET-URI: "http://keycloak:8080/realms/master/protocol/openid-connect/certs" # This configuration sets the JWK Set URI for the JWT decoder used by the resource server in Spring Security. The JWK Set URI is the endpoint where the resource server can retrieve the JSON Web Key (JWK) set containing the public keys used to verify the signatures of incoming JWTs. The Keycloak server provides private and public keys for signing and verifying JWTs, and the resource server needs to access the JWK Set URI to obtain the necessary keys for validating the JWTs received from clients. This configuration is essential for enabling JWT-based authentication and authorization in the application.
 #      SPRING_DATA_REDIS_HOST: redis # This configuration allows the gateway server to connect to the Redis server running in the redis container using the hostname "redis". This is necessary for the gateway server to perform caching and other Redis-related operations.
 #      SPRING_DATA_REDIS_PORT: 6379 # This configuration allows the gateway server to connect to the Redis server running in the redis container using the default Redis port 6379. This is necessary for the gateway server to perform caching and other Redis-related operations.
 #      SPRING_DATA_REDIS_TIMEOUT: 1s

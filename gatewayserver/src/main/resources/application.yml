@@ -20,6 +20,11 @@ spring:
       httpclient:
         connect-timeout: 5000 # This configuration sets the connection timeout for the HTTP client used by Spring Cloud Gateway to 5000 milliseconds (5 seconds). This means that if the gateway is unable to establish a connection to a downstream service within this time frame, it will throw a timeout exception. Setting an appropriate connection timeout can help to improve the responsiveness of the gateway and prevent it from hanging indefinitely when trying to connect to an unresponsive service.
         response-timeout: 10s # This configuration sets the response timeout for the HTTP client used by Spring Cloud Gateway to 5000 milliseconds (5 seconds). This means that if the gateway does not receive a response from a downstream service within this time frame after successfully establishing a connection, it will throw a timeout exception. Setting an appropriate response timeout can help to improve the responsiveness of the gateway and prevent it from hanging indefinitely when waiting for a response from an unresponsive service.
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: "http://127.0.0.1:7080/realms/master/protocol/openid-connect/certs" # This configuration sets the JWK Set URI for the JWT decoder used by the resource server in Spring Security. The JWK Set URI is the endpoint where the resource server can retrieve the JSON Web Key (JWK) set containing the public keys used to verify the signatures of incoming JWTs. The Keycloak server provides private and public keys for signing and verifying JWTs, and the resource server needs to access the JWK Set URI to obtain the necessary keys for validating the JWTs received from clients. This configuration is essential for enabling JWT-based authentication and authorization in the application.
 management:
   info:
     env:
