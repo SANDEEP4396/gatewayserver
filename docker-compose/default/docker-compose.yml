@@ -1,4 +1,22 @@
 services:
+  rabbit:
+    image: rabbitmq:4.0-management
+    hostname: rabbitmq
+    ports:
+      - "5672:5672" # This maps the RabbitMQ server to port 5672 on the host machine, allowing your microservices to connect to it using this port.
+      - "15672:15672" # This maps the RabbitMQ management console to port 15672 on the host machine, allowing you to access it via http://localhost:15672. The default username and password for the RabbitMQ management console are "guest" and "guest", respectively.
+    extends:
+      file: common-config.yml
+      service: network-deploy-service
+    healthcheck:
+      # This command checks if the RabbitMQ server is accepting connections on the specified port (5672).
+      #If the command returns a successful result, it indicates that the RabbitMQ server is healthy and ready to accept connections from your microservices.
+      #If it fails, it will indicate that the RabbitMQ server is not healthy, and your microservices may not be able to connect to it.
+      test: rabbitmq-diagnostics check_port_connectivity
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
   read:
     image: grafana/loki:latest
     command: "-config.file=/etc/loki/config.yaml -target=read"
@@ -236,6 +254,8 @@ services:
         file: common-config.yml
 
 
+
+
 #  accountsDB:
 #    container_name: accountsDB
 #    environment:
@@ -290,13 +310,19 @@ services:
     depends_on:
 #      accountsDB:
 #        condition: service_healthy
+#      rabbit:
+#        condition: service_healthy
+      kafka:
+        condition: service_healthy
       eurekaserver:
         condition: service_healthy
       configserver:
         condition: service_healthy # This ensures that the accounts service will only start after the configuration server has started successfully. This is important because the accounts service relies on the configuration server to fetch its configuration properties, and starting it before the configuration server is ready could lead to errors or misconfigurations.
     environment:
       SPRING_APPLICATION_NAME: "accounts"
+      SPRING_CLOUD_STREAM_KAFKA_BINDER_BROKERS: kafka:9092 # This configuration allows the accounts service to connect to the Kafka server running in the kafka container using the hostname "kafka" and the port 29092. This is necessary for the accounts service to communicate with the Kafka server for messaging and event-driven communication.
       OTEL_SERVICE_NAME: "accounts"
+      SPRING_RABBITMQ_HOST: "rabbit" # This configuration allows the accounts service to connect to the RabbitMQ server running in the rabbit container using the hostname "rabbit". This is necessary for the accounts service to communicate with the RabbitMQ server for messaging and event-driven communication.
 #      SPRING_DATASOURCE_URL: jdbc:mysql://accountsDB:3306/accountsDB # This configuration allows the accounts service to connect to the MySQL database running in the accountsDB container using the hostname "accountsDB" and the default MySQL port 3306. This is necessary for the accounts service to perform database operations such as storing and retrieving account information.
     extends:
       file: common-config.yml
@@ -436,6 +462,51 @@ services:
     extends:
       file: common-config.yml
       service: microservice-eurekaserver-config
+
+  message:
+    image: "sandeep4396/message:latest"
+    container_name: message
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      # SPRING_RABBITMQ_HOST: "rabbit" # This configuration allows the message service to connect to the RabbitMQ server running in the rabbit container using the hostname "rabbit". This is necessary for the message service to communicate with the RabbitMQ server for messaging and event-driven communication.
+      SPRING_CLOUD_STREAM_KAFKA_BINDER_BROKERS: kafka:9092 # This configuration allows the accounts service to connect to the Kafka server running in the kafka container using the hostname "kafka" and the port 29092. This is necessary for the accounts service to communicate with the Kafka server for messaging and event-driven communication.
+    extends:
+      service: network-deploy-service
+      file: common-config.yml
+
+  kafka:
+    image: apache/kafka:latest
+    hostname: kafka
+    container_name: kafka
+    ports:
+      - 9092:9092
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_NODE_ID: 1
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
+      KAFKA_LISTENERS: PLAINTEXT://kafka:29092,CONTROLLER://kafka:29093,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z kafka 9092 || exit 1"] # This command checks if the Kafka server is accepting connections on the specified port (9092). If the command returns a successful result, it indicates that the Kafka server is healthy and ready to accept connections from your microservices. If it fails, it will indicate that the Kafka server is not healthy, and your microservices may not be able to connect to it.
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    extends:
+      file: common-config.yml
+      service: network-deploy-service
 networks:
     financial-services:
         driver: bridge
